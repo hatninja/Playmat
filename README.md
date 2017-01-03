@@ -6,14 +6,12 @@ It allows you to use the popular SNES Mode 7 effect used in games such as Super 
 **Features**
 + Super easy to set-up!
 + Runs on slow computers.
-+ Built-in sprite system.
++ Versatile sprite system.
 
-To use it, just copy the `playmat.lua` file to your project and add this to your code:
+To install it, just copy the `playmat.lua` file to your project and add this to your code:
 ```lua
 PM = require "playmat.lua"
 ```
-
-
 
 ### Credits:
 
