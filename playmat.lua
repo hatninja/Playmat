@@ -1,7 +1,26 @@
---The library in development!
-local M7 = {}
+-- Copyright (c) 2017 Hatninja
+--
+-- Permission is hereby granted, free of charge, to any person obtaining a copy
+-- of this software and associated documentation files (the "Software"), to deal
+-- in the Software without restriction, including without limitation the rights
+-- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+-- copies of the Software, and to permit persons to whom the Software is
+-- furnished to do so, subject to the following conditions:
+--
+-- The above copyright notice and this permission notice shall be included in all
+-- copies or substantial portions of the Software.
+--
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+-- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+-- SOFTWARE.
 
-local tau,cos,sin,max, insert,sort = math.pi*2,math.cos,math.sin,math.max, table.insert,table.sort
+local PM = {}
+
+local tau,cos,sin,min, insert,sort = math.pi*2,math.cos,math.sin,math.min, table.insert,table.sort
 local lg = love.graphics
 
 local shader = lg.newShader [[
@@ -43,7 +62,7 @@ local function getRotation(cam)
 	return cam.r%tau
 end
 
-local function setPosition(cam,x,y)
+local function setPosition(cam,x,y,r)
 	cam.x = x
 	cam.y = y
 	return cam
@@ -63,7 +82,7 @@ local function getFov(cam,f) return cam.f end
 local function setOffset(cam,o) cam.o = o return cam end
 local function getOffset(cam,o) return cam.o end
 
-function M7.newCamera(sw,sh,x,y,r,z,f,o)
+local function newCamera(sw,sh,x,y,r,z,f,o)
 	local cam = {
 		sw=sw or 800,
 		sh=sh or 600,
@@ -98,7 +117,7 @@ function M7.newCamera(sw,sh,x,y,r,z,f,o)
 	return cam
 end
 
-function M7.drawPlane(cam, image, ox,oy, x,y,w,h)
+local function drawPlane(cam, image, ox,oy, x,y,w,h)
 	lg.setShader(shader)
 	shader:send('map', image)
 	shader:send('x', (cam.x - (ox or 0))/image:getWidth())
@@ -126,7 +145,7 @@ end
 
 --It took a lot of tinkering, but it finally works!
 --Thank my lack of understanding :P
-function M7.toScreen(cam,x,y)
+local function toScreen(cam,x,y)
 	--Gets the x,y position relative to the camera and zooms it out for good measure.
 	local obj_x = -((cam.x-x)/cam.z)
 	local obj_y = ((cam.y-y)/cam.z)
@@ -144,7 +163,7 @@ function M7.toScreen(cam,x,y)
 	return screen_x, screen_y, size
 end
 
-function M7.toWorld(cam,x,y)
+local function toWorld(cam,x,y)
 	local sx,sy = (cam.sw/2-x)*cam.z/(cam.sw/cam.sh), ((cam.o*cam.sh)-y)*(cam.z/cam.f)
 	local rx,ry = (sx*cam.x1) + (sy*cam.y1), (sx*cam.x2) + (sy*cam.y2)
 	return (rx/y + cam.x), (ry/y + cam.y)
@@ -154,15 +173,16 @@ end
 --TO-DO: Quads
 --Instead of sorting when it's time to draw, why not sort during insertion?
 
-local camera = false
 local buffer = {}
 
 --Set to a camera
-function M7.placeSprite(cam, image, x,y, r, sx,sy, ox,oy, kx,ky) --Priority option?
-	local scx,scy,s = M7.toScreen(cam,x,y)
+local function placeSprite(cam, image, x,y, r, sx,sy, ox,oy, kx,ky) --Priority option?
+	local scx,scy,s = toScreen(cam,x,y)
 	
-	if s*max(sx,sy or 0) > 1 then
-		table.insert(buffer,{
+	if not buffer[cam] then buffer[cam]={} end
+	
+	if s*min(sx,sy or 0) > 1 then
+		insert(buffer[cam],{
 			s, --Determines drawing order
 			image,
 			scx,scy,
@@ -176,12 +196,21 @@ function M7.placeSprite(cam, image, x,y, r, sx,sy, ox,oy, kx,ky) --Priority opti
 	end
 end
 
-function M7.renderSprites()
-	sort(buffer,function(a,b) return a[1] < b[1] end)
-	for i=1,#buffer do local v=buffer[i]
-		lg.draw(v[2],v[3],v[4],v[5],v[6]/v[2]:getWidth(),v[7]/v[2]:getHeight(),v[8],v[9],v[10],v[11])
+local function renderSprites(cam)
+	if buffer[cam] then
+		sort(buffer[cam],function(a,b) return a[1] < b[1] end)
+		for i=1,#buffer[cam] do local v=buffer[cam][i]
+			lg.draw(v[2],v[3],v[4],v[5],v[6]/v[2]:getWidth(),v[7]/v[2]:getHeight(),v[8],v[9],v[10],v[11])
+		end
+		buffer[cam] = nil
 	end
-	buffer = {}
 end
 
-return M7
+PM.newCamera = newCamera
+PM.drawPlane = drawPlane
+PM.toScreen = toScreen
+PM.toWorld = toWorld
+PM.placeSprite = placeSprite
+PM.renderSprites = renderSprites 
+
+return PM
