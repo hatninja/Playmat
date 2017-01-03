@@ -20,7 +20,7 @@
 
 local PM = {}
 
-local tau,cos,sin,min, insert,sort = math.pi*2,math.cos,math.sin,math.min, table.insert,table.sort
+local tau,cos,sin,min, insert,remove,sort = math.pi*2,math.cos,math.sin,math.min, table.insert,table.remove,table.sort
 local lg = love.graphics
 
 local shader = lg.newShader [[
@@ -73,8 +73,8 @@ local function getPosition(cam) return cam.x, cam.y end
 local function getX(cam) return cam.x end
 local function getY(cam) return cam.y end
 
-local function setZoom(cam,z) cam.z = 1/z return cam end
-local function getZoom(cam,z) return 1/cam.z end
+local function setZoom(cam,z) cam.z = z return cam end
+local function getZoom(cam,z) return cam.z end
 
 local function setFov(cam,f) cam.f = f return cam end
 local function getFov(cam,f) return cam.f end
@@ -83,7 +83,7 @@ local function setOffset(cam,o) cam.o = o return cam end
 local function getOffset(cam,o) return cam.o end
 
 local function newCamera(sw,sh,x,y,r,z,f,o)
-	local cam = {
+	local cam = { __playmat=true,
 		sw=sw or 800,
 		sh=sh or 600,
 		x=x or 0,
@@ -175,32 +175,42 @@ end
 
 local buffer = {}
 
---Set to a camera
-local function placeSprite(cam, image, x,y, r, sx,sy, ox,oy, kx,ky) --Priority option?
-	local scx,scy,s = toScreen(cam,x,y)
+local function placeSprite(cam, ...)
+	local arg = {...}
 	
-	if not buffer[cam] then buffer[cam]={} end
+	local q = type(arg[2]) ~= "number" and 1 or 0
 	
-	if s*min(sx,sy or 0) > 1 then
-		insert(buffer[cam],{
-			s, --Determines drawing order
-			image,
-			scx,scy,
-			r,
-			s*sx,
-			sy and s*sy or s*sx,
-			ox or image:getWidth()/2,
-			oy or image:getHeight(),
-			kx,ky
-		})
+	local wx,wy,s=toScreen(cam,arg[2+q] or 0,arg[3+q] or 0)
+	arg[2+q],arg[3+q] = wx, wy
+
+	local width, height
+	if q == 0 then
+		width, height = arg[1]:getDimensions()
+	else
+		local x,y,w,h = arg[2]:getViewport()
+		width, height = w,h
+	end
+	
+	local sx2 = (s*(arg[5+q] or 1))/width
+	local sy2 = arg[6+q] and (s*arg[6+q])/height or sx2
+	arg[5+q] = sx2
+	arg[6+q] = sy2
+	
+	arg[7+q] = arg[7+q] or width/2 
+	arg[8+q] = arg[8+q] or height
+	
+	arg.dist = s
+	if s*min(sx2,sy2) > 1 then
+		if not buffer[cam] then buffer[cam]={} end
+		insert(buffer[cam],arg)
 	end
 end
 
 local function renderSprites(cam)
 	if buffer[cam] then
-		sort(buffer[cam],function(a,b) return a[1] < b[1] end)
+		sort(buffer[cam],function(a,b) return a.dist < b.dist end)
 		for i=1,#buffer[cam] do local v=buffer[cam][i]
-			lg.draw(v[2],v[3],v[4],v[5],v[6]/v[2]:getWidth(),v[7]/v[2]:getHeight(),v[8],v[9],v[10],v[11])
+			lg.draw(unpack(v))
 		end
 		buffer[cam] = nil
 	end
