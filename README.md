@@ -13,13 +13,12 @@ To use it, just copy the ```playmat.lua``` file to your project and require it i
 playmat = require "playmat.lua"
 ```
 
-### Documentation:
-
-Check out the wiki to learn how to use this!
+**Example coming soon!**
 
 ### Credits:
 
 Retrotails - Original shader code.
+
 Hatninja - The library.
 
 As of now, most of the library is subject to change.
