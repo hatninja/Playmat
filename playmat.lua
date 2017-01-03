@@ -18,6 +18,7 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
+--Playmat Library v1.0
 local PM = {}
 
 local tau,cos,sin,min, insert,remove,sort = math.pi*2,math.cos,math.sin,math.min, table.insert,table.remove,table.sort
