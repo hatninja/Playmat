@@ -159,7 +159,7 @@ local function toScreen(cam,x,y)
 	local screen_y = ( (space_y + (cam.o-1)) / distance )*cam.sh+cam.sh
 	
 	--Should be approximately one pixel on the plane
-	local size = ((1/distance)/cam.z*cam.o)*800 
+	local size = ((1/distance)/cam.z*cam.o)*cam.sw
 	
 	return screen_x, screen_y, size
 end
