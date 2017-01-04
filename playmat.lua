@@ -122,8 +122,8 @@ local function drawPlane(cam, image, ox,oy, x,y,w,h)
 	shader:send('map', image)
 	shader:send('x', (cam.x - (ox or 0))/image:getWidth())
 	shader:send('y', (cam.y - (oy or 0))/image:getHeight())
-	shader:send('zoomx', (image:getWidth())/cam.z)
-	shader:send('zoomy', (image:getHeight())/cam.z)
+	shader:send('zoomx', image:getWidth()/cam.z)
+	shader:send('zoomy', image:getHeight()/cam.z)
 	shader:send('fov', cam.f)
 	shader:send('offset', cam.o)
 	
@@ -139,21 +139,21 @@ local function drawPlane(cam, image, ox,oy, x,y,w,h)
 		lg.pop()
 	end)
 	lg.setShader()
-	lg.draw(canvas, x or 0,y or 0, 0, cam.sw/canvas:getWidth(),cam.sh/canvas:getHeight())
+	lg.draw(canvas, (x or 0), (y or 0), 0, cam.sw/canvas:getWidth(),cam.sh/canvas:getHeight())
 end
 
 --It took a lot of tinkering, but it finally works!
 --Thank my lack of understanding :P
 local function toScreen(cam,x,y)
 	--Gets the x,y position relative to the camera and zooms it out for good measure.
-	local obj_x = -((cam.x-x)/cam.z)
-	local obj_y = ((cam.y-y)/cam.z)
+	local obj_x = -(cam.x-x)/cam.z
+	local obj_y = (cam.y-y)/cam.z
 	--Rotate by the camera angle, the final translation in 2d space!
 	local space_x = -(obj_x*cam.x1) - (obj_y*cam.y1)
 	local space_y = ((obj_x*cam.x2) + (obj_y*cam.y2))*cam.f
 	--Project to screen!
 	local distance = 1-(space_y) 
-	local screen_x = ( space_x / distance )*cam.o *cam.sw+cam.sw/2
+	local screen_x = ( space_x / distance )*cam.o*cam.sw+cam.sw/2
 	local screen_y = ( (space_y + (cam.o-1)) / distance )*cam.sh+cam.sh
 	
 	--Should be approximately one pixel on the plane
@@ -205,8 +205,8 @@ end
 local function renderSprites(cam)
 	if buffer[cam] then
 		sort(buffer[cam],function(a,b) return a.dist < b.dist end)
-		for i=1,#buffer[cam] do local v=buffer[cam][i]
-			lg.draw(unpack(v))
+		for i=1,#buffer[cam] do
+			lg.draw(unpack(buffer[cam][i]))
 		end
 		buffer[cam] = nil
 	end
