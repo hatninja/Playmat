@@ -16,7 +16,7 @@ PM = require "playmat.lua"
 ### Usage:
 For the documentation, check out the [Wiki](/wiki)!
 
-For the playmat demo and more examples, check out the Love2d forum post:
+For the playmat demo and more examples, check out the forum post:
 
 <https://love2d.org/forums/viewtopic.php?f=5&t=83309>
 
