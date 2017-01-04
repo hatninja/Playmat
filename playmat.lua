@@ -18,10 +18,11 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
---Playmat Library v1.0.2
+--Playmat Library v1.0.3
 local PM = {}
 
-local tau,cos,sin,min, insert,remove,sort = math.pi*2,math.cos,math.sin,math.min, table.insert,table.remove,table.sort
+local tau,cos,sin,min = math.pi*2,math.cos,math.sin,math.min
+local insert,remove,sort = table.insert,table.remove,table.sort
 local lg = love.graphics
 
 local shader = lg.newShader [[
@@ -196,7 +197,7 @@ local function placeSprite(cam, ...)
 	arg[8+q] = arg[8+q] or height
 	
 	arg.dist = s
-	if s*min(sx2,sy2) > 1 then
+	if min(sx2*width, sy2*height) > 1 then
 		if not buffer[cam] then buffer[cam]={} end
 		insert(buffer[cam],arg)
 	end
