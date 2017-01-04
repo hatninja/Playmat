@@ -18,7 +18,7 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
---Playmat Library v1.0
+--Playmat Library v1.0.2
 local PM = {}
 
 local tau,cos,sin,min, insert,remove,sort = math.pi*2,math.cos,math.sin,math.min, table.insert,table.remove,table.sort
@@ -28,7 +28,6 @@ local shader = lg.newShader [[
 extern Image map;
 extern number x = 0;
 extern number y = 0;
-extern number r = 0;
 extern number zoomx = 32;
 extern number zoomy = 32;
 extern number fov = 1.0;
@@ -54,8 +53,8 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 pixel_coords)
 
 local function setRotation(cam,r)
 	cam.r = r
-	cam.x1 = sin(r)  cam.y1 = cos(r)
-	cam.x2 = -cos(r) cam.y2 = sin(r)
+	cam.x1 = sin(r); cam.y1 = cos(r)
+	cam.x2 = -cos(r); cam.y2 = sin(r)
 	return cam
 end
 
@@ -123,7 +122,6 @@ local function drawPlane(cam, image, ox,oy, x,y,w,h)
 	shader:send('map', image)
 	shader:send('x', (cam.x - (ox or 0))/image:getWidth())
 	shader:send('y', (cam.y - (oy or 0))/image:getHeight())
-	shader:send('r', cam.r)
 	shader:send('zoomx', (image:getWidth())/cam.z)
 	shader:send('zoomy', (image:getHeight())/cam.z)
 	shader:send('fov', cam.f)
@@ -171,9 +169,6 @@ local function toWorld(cam,x,y)
 end
 
 --Sprites:
---TO-DO: Quads
---Instead of sorting when it's time to draw, why not sort during insertion?
-
 local buffer = {}
 
 local function placeSprite(cam, ...)
