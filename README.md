@@ -13,12 +13,17 @@ To install it, just copy the `playmat.lua` file to your project and add this to 
 PM = require "playmat.lua"
 ```
 
-### Credits:
+### Usage:
+For the documentation, check out the [Wiki](/wiki)!
 
-Hatninja - Author of library.
+For the playmat demo and more examples, check out the Love2d forums!
 
-Retrotails - Original shader code.
+[Forum Post](https://love2d.org/forums/viewtopic.php?f=5&t=83309)!
 
+[Forums](https://love2d.org/forums/index.php)
 
-The library is ready to use, but it still can be subject to change!
-Your feedback and criticism would be very much appreciated!
+### Credits
+
+Retrotails - Shader code help.
+
+Hatninja - The library.
