@@ -1,3 +1,3 @@
-+ Add support in the shader for non-square images. DONE! :D
-+ Option for plane wrapping feature.
-+ Sprite priority
++ Add support in the shader for non-square images. DONE! :D  
++ Option for plane wrapping feature. DONE!  
++ Sprite priority...

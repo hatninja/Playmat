@@ -18,7 +18,7 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
---Playmat Library v1.0.3
+--Playmat Library v1.1
 local PM = {}
 
 local tau,cos,sin,min = math.pi*2,math.cos,math.sin,math.min
@@ -34,7 +34,7 @@ extern number y = 0;
 extern number zoom = 32;
 extern number fov = 1.0;
 extern number offset = 1.0;
-extern int wrap = 0;
+extern number wrap = 0;
 
 extern number x1,y1,x2,y2;
 
@@ -125,7 +125,7 @@ local function newCamera(sw,sh,x,y,r,z,f,o)
 	return cam
 end
 
-local function drawPlane(cam, image, ox,oy, x,y,w,h)
+local function drawPlane(cam, image, ox,oy, wrap, x,y,w,h)
 	lg.setShader(shader)
 	shader:send('map', image)
 	shader:send('mapw', image:getWidth())
@@ -135,6 +135,7 @@ local function drawPlane(cam, image, ox,oy, x,y,w,h)
 	shader:send('zoom', cam.z)
 	shader:send('fov', cam.f)
 	shader:send('offset', cam.o)
+	shader:send('wrap', wrap and 1 or 0)
 	
 	shader:send('x1', cam.x1) shader:send('y1', cam.y1)
 	shader:send('x2', cam.x2) shader:send('y2', cam.y2)
