@@ -22,6 +22,6 @@ For the playmat demo and more examples, check out the forum post:
 
 ### Credits
 
-Retrotails - Shader code help.
+Thank you retrotails for the original shader code!
 
-Hatninja - The library.
+Hatninja - Author
