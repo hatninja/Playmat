@@ -27,10 +27,11 @@ local lg = love.graphics
 
 local shader = lg.newShader [[
 extern Image map;
+extern number mapw = 0;
+extern number maph = 0;
 extern number x = 0;
 extern number y = 0;
-extern number zoomx = 32;
-extern number zoomy = 32;
+extern number zoom = 32;
 extern number fov = 1.0;
 extern number offset = 1.0;
 extern int wrap = 0;
@@ -41,13 +42,19 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 pixel_coords)
 {
 	mat2 rotation = mat2(x1, y1, x2, y2);
 
-	vec2 uv = vec2((0.5 - texture_coords.x)/zoomx, (offset - texture_coords.y)/(zoomy*fov)) * rotation;
-	vec2 uv2 = vec2(uv.x / (texture_coords.y) + x, uv.y / (texture_coords.y) + y);
+	vec2 uv = vec2(
+		(0.5 - texture_coords.x)*zoom,
+		(offset - texture_coords.y)*(zoom/fov)
+	) * rotation;
+	vec2 uv2 = vec2(
+		(uv.x / (texture_coords.y) + x) / mapw,
+		(uv.y / (texture_coords.y) + y) / maph
+	);
 	
 	if (wrap == 0 && (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0)) {
 		return vec4( 0.0,0.0,0.0,0.0 );
 	} else {
-		return texture2D(map,mod(uv2,1.0));
+		return Texel(map,mod(uv2,1.0));
 	}
 }
 ]]
@@ -121,10 +128,11 @@ end
 local function drawPlane(cam, image, ox,oy, x,y,w,h)
 	lg.setShader(shader)
 	shader:send('map', image)
-	shader:send('x', (cam.x - (ox or 0))/image:getWidth())
-	shader:send('y', (cam.y - (oy or 0))/image:getHeight())
-	shader:send('zoomx', image:getWidth()/cam.z)
-	shader:send('zoomy', image:getHeight()/cam.z)
+	shader:send('mapw', image:getWidth())
+	shader:send('maph', image:getHeight())
+	shader:send('x', (cam.x - (ox or 0)))
+	shader:send('y', (cam.y - (oy or 0)))
+	shader:send('zoom', cam.z)
 	shader:send('fov', cam.f)
 	shader:send('offset', cam.o)
 	
