@@ -25,40 +25,7 @@ local tau,cos,sin,min = math.pi*2,math.cos,math.sin,math.min
 local insert,remove,sort = table.insert,table.remove,table.sort
 local lg = love.graphics
 
-local shader = lg.newShader [[
-extern Image map;
-extern number mapw = 0;
-extern number maph = 0;
-extern number x = 0;
-extern number y = 0;
-extern number zoom = 32;
-extern number fov = 1.0;
-extern number offset = 1.0;
-extern number wrap = 0;
-
-extern number x1,y1,x2,y2;
-
-vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 pixel_coords)
-{
-	mat2 rotation = mat2(x1, y1, x2, y2);
-
-	vec2 uv = vec2(
-		(0.5 - texture_coords.x)*zoom,
-		(offset - texture_coords.y)*(zoom/fov)
-	) * rotation;
-	vec2 uv2 = vec2(
-		(uv.x / (texture_coords.y) + x) / mapw,
-		(uv.y / (texture_coords.y) + y) / maph
-	);
-	
-	if (wrap == 0 && (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0)) {
-		return vec4( 0.0,0.0,0.0,0.0 );
-	} else {
-		return Texel(map,mod(uv2,1.0));
-	}
-}
-]]
-
+--Camera
 local function setRotation(cam,r)
 	cam.r = r
 	cam.x1 = sin(r); cam.y1 = cos(r)
@@ -125,7 +92,42 @@ local function newCamera(sw,sh,x,y,r,z,f,o)
 	return cam
 end
 
-local function drawPlane(cam, image, ox,oy, wrap, x,y,w,h)
+--Plane:
+local shader = lg.newShader [[
+extern Image map;
+extern number mapw;
+extern number maph;
+extern number x;
+extern number y;
+extern number zoom;
+extern number fov;
+extern number offset;
+extern number wrap;
+
+extern number x1,y1,x2,y2;
+
+vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 pixel_coords)
+{
+	mat2 rotation = mat2(x1, y1, x2, y2);
+
+	vec2 uv = vec2(
+		(0.5 - texture_coords.x)*zoom,
+		(offset - texture_coords.y)*(zoom/fov)
+	) * rotation;
+	vec2 uv2 = vec2(
+		(uv.x / texture_coords.y + x) / mapw,
+		(uv.y / texture_coords.y + y) / maph
+	);
+	
+	if (wrap == 0 && (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0)) {
+		return vec4( 0.0,0.0,0.0,0.0 );
+	} else {
+		return Texel(map,mod(uv2,1.0));
+	}
+}
+]]
+
+local function drawPlane(cam, image, ox,oy, wrap)
 	lg.setShader(shader)
 	shader:send('map', image)
 	shader:send('mapw', image:getWidth())
@@ -149,22 +151,19 @@ local function drawPlane(cam, image, ox,oy, wrap, x,y,w,h)
 		lg.pop()
 	end)
 	lg.setShader()
-	lg.draw(canvas, (x or 0), (y or 0), 0, cam.sw/canvas:getWidth(),cam.sh/canvas:getHeight())
+	lg.draw(canvas)
 end
 
---It took a lot of tinkering, but it finally works!
---Thank my lack of understanding :P
 local function toScreen(cam,x,y)
-	--Gets the x,y position relative to the camera and zooms it out for good measure.
 	local obj_x = -(cam.x-x)/cam.z
 	local obj_y = (cam.y-y)/cam.z
-	--Rotate by the camera angle, the final translation in 2d space!
-	local space_x = -(obj_x*cam.x1) - (obj_y*cam.y1)
-	local space_y = ((obj_x*cam.x2) + (obj_y*cam.y2))*cam.f
-	--Project to screen!
+
+	local space_x = (-obj_x*cam.x1 - obj_y*cam.y1)
+	local space_y = (obj_x*cam.x2 + obj_y*cam.y2)*cam.f
+
 	local distance = 1-(space_y) 
 	local screen_x = ( space_x / distance )*cam.o*cam.sw+cam.sw/2
-	local screen_y = ( (space_y + (cam.o-1)) / distance )*cam.sh+cam.sh
+	local screen_y = ( (space_y + cam.o-1) / distance )*cam.sh+cam.sh
 	
 	--Should be approximately one pixel on the plane
 	local size = ((1/distance)/cam.z*cam.o)*cam.sw
@@ -173,9 +172,13 @@ local function toScreen(cam,x,y)
 end
 
 local function toWorld(cam,x,y)
-	local sx,sy = (cam.sw/2-x)*cam.z/(cam.sw/cam.sh), ((cam.o*cam.sh)-y)*(cam.z/cam.f)
-	local rx,ry = (sx*cam.x1) + (sy*cam.y1), (sx*cam.x2) + (sy*cam.y2)
-	return (rx/y + cam.x), (ry/y + cam.y)
+	local sx = (cam.sw/2 - x)*cam.z/(cam.sw/cam.sh)
+	local sy = (cam.o*cam.sh - y)*(cam.z/cam.f)
+	
+	local rotx = sx*cam.x1 + sy*cam.y1
+	local roty = sx*cam.x2 + sy*cam.y2
+	
+	return (rotx/y + cam.x), (roty/y + cam.y)
 end
 
 --Sprites:
@@ -215,9 +218,11 @@ end
 local function renderSprites(cam)
 	if buffer[cam] then
 		sort(buffer[cam],function(a,b) return a.dist < b.dist end)
+		
 		for i=1,#buffer[cam] do
-			lg.draw(unpack(buffer[cam][i]))
+			lg.draw(unpack(buffer[cam][i])) 
 		end
+		
 		buffer[cam] = nil
 	end
 end
