@@ -18,11 +18,11 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
---Playmat Library v1.1
+--Playmat Library v1.2
 local PM = {}
 
 local tau,cos,sin,min = math.pi*2,math.cos,math.sin,math.min
-local insert,remove,sort = table.insert,table.remove,table.sort
+local insert,sort = table.insert,table.sort
 local lg = love.graphics
 
 --Camera
@@ -32,29 +32,30 @@ local function setRotation(cam,r)
 	cam.x2 = -cos(r); cam.y2 = sin(r)
 	return cam
 end
-
-local function getRotation(cam)
-	return cam.r%tau
-end
-
 local function setPosition(cam,x,y,r)
 	cam.x = x
 	cam.y = y
 	return cam
 end
+local function setZoom(cam,z)
+	cam.z = z
+	return cam
+end
+local function setFov(cam,f)
+	cam.f = f
+	return cam
+end
+local function setOffset(cam,o)
+	cam.o = o
+	return cam
+end
 
+local function getRotation(cam) return cam.r % tau end
 local function getPosition(cam) return cam.x, cam.y end
-
 local function getX(cam) return cam.x end
 local function getY(cam) return cam.y end
-
-local function setZoom(cam,z) cam.z = z return cam end
 local function getZoom(cam,z) return cam.z end
-
-local function setFov(cam,f) cam.f = f return cam end
 local function getFov(cam,f) return cam.f end
-
-local function setOffset(cam,o) cam.o = o return cam end
 local function getOffset(cam,o) return cam.o end
 
 local function newCamera(sw,sh,x,y,r,z,f,o)
@@ -72,17 +73,17 @@ local function newCamera(sw,sh,x,y,r,z,f,o)
 		x2=0,
 		y2=0,
 		setRotation = setRotation,
-		getRotation = getRotation,
 		setPosition = setPosition,
+		setZoom = setZoom,
+		setFov = setFov,
+		setOffset = setOffset,
+		getRotation = getRotation,
 		getPosition = getPosition,
 		getX = getX,
 		getY = getY,
-		setZoom = setZoom,
 		getZoom = getZoom,
-		setFov = setFov,
 		getFov = getFov,
-		setOffset = setOffset,
-		getOffset = getOffset
+		getOffset = getOffset	
 	}
 	cam.rendercanvas = lg.newCanvas(cam.sw,cam.sh)
 	cam.canvas = lg.newCanvas(cam.sw,cam.sh)
@@ -122,7 +123,7 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 pixel_coords)
 	if (wrap == 0 && (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0)) {
 		return vec4( 0.0,0.0,0.0,0.0 );
 	} else {
-		return Texel(map,mod(uv2,1.0));
+		return Texel(map, mod(uv2,1.0) );
 	}
 }
 ]]
@@ -132,8 +133,8 @@ local function drawPlane(cam, image, ox,oy, wrap)
 	shader:send('map', image)
 	shader:send('mapw', image:getWidth())
 	shader:send('maph', image:getHeight())
-	shader:send('x', (cam.x - (ox or 0)))
-	shader:send('y', (cam.y - (oy or 0)))
+	shader:send('x', (cam.x - (ox or 0)) )
+	shader:send('y', (cam.y - (oy or 0)) )
 	shader:send('zoom', cam.z)
 	shader:send('fov', cam.f)
 	shader:send('offset', cam.o)
