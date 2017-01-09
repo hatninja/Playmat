@@ -18,10 +18,10 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
---Playmat Library v1.2
+--Playmat Library v1.2.2
 local PM = {}
 
-local tau,cos,sin,min = math.pi*2,math.cos,math.sin,math.min
+local tau,cos,sin = math.pi*2,math.cos,math.sin
 local insert,sort = table.insert,table.sort
 local lg = love.graphics
 
