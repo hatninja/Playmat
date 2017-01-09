@@ -203,14 +203,16 @@ local function placeSprite(cam, ...)
 	
 	local sx2 = (s*(arg[5+q] or 1))/width
 	local sy2 = arg[6+q] and (s*arg[6+q])/height or sx2
-	arg[5+q] = sx2
-	arg[6+q] = sy2
 	
 	arg[7+q] = arg[7+q] or width/2 
 	arg[8+q] = arg[8+q] or height
 	
 	arg.dist = s
-	if min(sx2*width, sy2*height) > 1 then
+	
+	if (sx2 > 0) == ((arg[5+q] or 1) > 0) and (sy2 > 0) == ((arg[6+q] or 1) > 0) then
+		arg[5+q] = sx2
+		arg[6+q] = sy2
+		
 		if not buffer[cam] then buffer[cam]={} end
 		insert(buffer[cam],arg)
 	end
