@@ -18,7 +18,7 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
---Playmat Library v1.2.2
+--Playmat Library v1.5
 local PM = {}
 
 local tau,cos,sin = math.pi*2,math.cos,math.sin
@@ -32,7 +32,7 @@ local function setRotation(cam,r)
 	cam.x2 = -cos(r); cam.y2 = sin(r)
 	return cam
 end
-local function setPosition(cam,x,y,r)
+local function setPosition(cam,x,y)
 	cam.x = x
 	cam.y = y
 	return cam
@@ -72,6 +72,7 @@ local function newCamera(sw,sh,x,y,r,z,f,o)
 		y1=0,
 		x2=0,
 		y2=0,
+		buffer={},
 		setRotation = setRotation,
 		setPosition = setPosition,
 		setZoom = setZoom,
@@ -86,7 +87,7 @@ local function newCamera(sw,sh,x,y,r,z,f,o)
 		getOffset = getOffset	
 	}
 	cam.rendercanvas = lg.newCanvas(cam.sw,cam.sh)
-	cam.canvas = lg.newCanvas(cam.sw,cam.sh)
+--	cam.canvas = lg.newCanvas(cam.sw,cam.sh)
 	
 	setRotation(cam,cam.r)
 
@@ -123,16 +124,15 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 pixel_coords)
 	if (wrap == 0 && (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0)) {
 		return vec4( 0.0,0.0,0.0,0.0 );
 	} else {
-		return Texel(map, mod(uv2,1.0) );
+		return (Texel(map, mod(uv2,1.0) ) * color);
 	}
 }
 ]]
 
-local function drawPlane(cam, image, ox,oy, wrap)
-	lg.setShader(shader)
+local function drawPlane(cam, image, ox,oy, sx,sy, wrap)
 	shader:send('map', image)
-	shader:send('mapw', image:getWidth())
-	shader:send('maph', image:getHeight())
+	shader:send('mapw', image:getWidth()*(sx or 1))
+	shader:send('maph', image:getHeight()*(sy or 1))
 	shader:send('x', (cam.x - (ox or 0)) )
 	shader:send('y', (cam.y - (oy or 0)) )
 	shader:send('zoom', cam.z)
@@ -143,16 +143,10 @@ local function drawPlane(cam, image, ox,oy, wrap)
 	shader:send('x1', cam.x1) shader:send('y1', cam.y1)
 	shader:send('x2', cam.x2) shader:send('y2', cam.y2)
 	
-	local canvas = cam.canvas
-	canvas:renderTo(function()
-		lg.push()
-		lg.origin()
-		lg.clear() --It's fun to comment this out sometimes :D
-		lg.draw(cam.rendercanvas)
-		lg.pop()
-	end)
+	lg.setShader(shader)
+	lg.draw(cam.rendercanvas)
 	lg.setShader()
-	lg.draw(canvas)
+
 end
 
 local function toScreen(cam,x,y)
@@ -183,15 +177,13 @@ local function toWorld(cam,x,y)
 end
 
 --Sprites:
-local buffer = {}
-
 local function placeSprite(cam, ...)
 	local arg = {...}
 	
+	--Q is 1 if there is a quad argument, otherwise it's 0.
 	local q = type(arg[2]) ~= "number" and 1 or 0
 	
 	local wx,wy,s=toScreen(cam,arg[2+q] or 0,arg[3+q] or 0)
-	arg[2+q],arg[3+q] = wx, wy
 
 	local width, height
 	if q == 0 then
@@ -204,29 +196,39 @@ local function placeSprite(cam, ...)
 	local sx2 = (s*(arg[5+q] or 1))/width
 	local sy2 = arg[6+q] and (s*arg[6+q])/height or sx2
 	
-	arg[7+q] = arg[7+q] or width/2 
-	arg[8+q] = arg[8+q] or height
-	
-	arg.dist = s
-	
+	--If scale is flipped unintentionally. (When it is behind the camera.)
 	if (sx2 > 0) == ((arg[5+q] or 1) > 0) and (sy2 > 0) == ((arg[6+q] or 1) > 0) then
+		--We draw!
+		arg[2+q],arg[3+q] = wx, wy
+		
 		arg[5+q] = sx2
 		arg[6+q] = sy2
 		
-		if not buffer[cam] then buffer[cam]={} end
-		insert(buffer[cam],arg)
+		arg[7+q] = arg[7+q] or width/2 
+		arg[8+q] = arg[8+q] or height
+		
+		arg.color = {lg.getColor()}
+		arg.dist = s
+		
+		insert(cam.buffer,arg)
 	end
 end
 
 local function renderSprites(cam)
-	if buffer[cam] then
-		sort(buffer[cam],function(a,b) return a.dist < b.dist end)
+	if cam.buffer then
+		local prevColor = {lg.getColor()}
 		
-		for i=1,#buffer[cam] do
-			lg.draw(unpack(buffer[cam][i])) 
+		sort(cam.buffer,function(a,b) return a.dist < b.dist end)
+		
+		for i=1,#cam.buffer do
+			local arg = cam.buffer[i]
+			if arg.color then lg.setColor(arg.color) end
+			lg.draw(unpack(arg)) 
 		end
 		
-		buffer[cam] = nil
+		cam.buffer = {}
+		
+		lg.setColor(prevColor)
 	end
 end
 
