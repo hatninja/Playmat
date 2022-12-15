@@ -121,7 +121,7 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 pixel_coords)
 		(uv.y / texture_coords.y + y) / maph
 	);
 	
-	if (wrap == 0 && (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0)) {
+	if (wrap == 0.0 && (uv2.x < 0.0 || uv2.x > 1.0 || uv2.y < 0.0 || uv2.y > 1.0)) {
 		return vec4( 0.0,0.0,0.0,0.0 );
 	} else {
 		return (Texel(map, mod(uv2,1.0) ) * color);
